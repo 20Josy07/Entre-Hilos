@@ -2,7 +2,12 @@ import { auth } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 // Global Registry
-export const API_URL = '/api';
+// In local dev (localhost) the backend runs on the same server.
+// In production (Netlify), requests go to the Railway backend.
+const RAILWAY_URL = 'https://COLOCA-TU-URL-DE-RAILWAY-AQUI.up.railway.app';
+export const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? '/api'
+    : `${RAILWAY_URL}/api`;
 export let currentUserToken = null;
 
 /**
