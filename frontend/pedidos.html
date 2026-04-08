@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Pedidos | Entre Hilos</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.postimg.cc">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <link rel="dns-prefetch" href="https://i.postimg.cc">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        tierra: {
+                            50: '#fdfbf7', 100: '#f7f2e8', 200: '#eedfc9',
+                            300: '#e3c5a3', 400: '#d5a377', 500: '#c88753',
+                            600: '#ba7045', 700: '#9b5839', 800: '#804a33',
+                            900: '#673c2a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background-color: theme('colors.tierra.50'); color: theme('colors.tierra.900'); }
+        .gradient-text { background: linear-gradient(135deg, #673c2a 0%, #ba7045 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        /* Premium Live Effects */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(186, 112, 69, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(186, 112, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(186, 112, 69, 0); }
+        }
+        .pulse-active { animation: pulse-glow 2s infinite; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer-load 2s infinite;
+        }
+        @keyframes shimmer-load { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        /* Connectivity Indicator */
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; position: relative; }
+        .live-dot::after {
+            content: ''; position: absolute; inset: -4px; border-radius: 50%; background: #22c55e; opacity: 0.4;
+            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+        @keyframes ping { 75%, 100% { transform: scale(2.5); opacity: 0; } }
+    </style>
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="glass-nav fixed w-full top-0 z-50 py-4 transition-all duration-300">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <a href="/index.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                <img src="https://i.postimg.cc/pLgfbFt1/logo-Entre-Hilos.png" alt="Entre Hilos Logo" class="h-10 md:h-12 w-auto object-contain">
+                <span class="text-xl md:text-2xl font-bold tracking-tight text-tierra-900">Entre Hilos</span>
+            </a>
+            <nav class="hidden md:flex gap-8 items-center font-medium text-tierra-700">
+                <a href="/index.html" class="hover:text-tierra-500 transition-colors">Inicio</a>
+                <a href="/catalogo.html" class="hover:text-tierra-500 transition-colors">Catálogo</a>
+                <a href="/pedidos.html" class="text-tierra-900 border-b-2 border-tierra-500 pb-1">Mis Pedidos</a>
+                <a href="/index.html#nosotros" class="hover:text-tierra-500 transition-colors">Nosotros</a>
+            </nav>
+            <div class="flex items-center gap-4">
+                <a href="/login.html" id="auth-btn" class="text-tierra-800 hover:text-tierra-600 font-medium text-sm transition-colors border border-tierra-300 px-4 py-2 rounded-full hidden">Entrar</a>
+                
+                <div id="user-profile" class="hidden relative group">
+                    <button id="profile-btn" class="flex items-center gap-2 focus:outline-none">
+                        <div id="user-avatar" class="w-9 h-9 md:w-11 md:h-11 bg-tierra-900 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg ring-2 ring-white hover:scale-105 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                    </button>
+                    <div id="user-dropdown" class="absolute right-0 mt-3 w-48 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white p-2 hidden animate-fade-in z-[60]">
+                        <button id="logout-btn" class="w-full text-left px-4 py-3 text-sm font-semibold text-tierra-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all flex items-center gap-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-32 pb-24">
+        <div class="container mx-auto px-6">
+            <header class="max-w-5xl mx-auto mb-16 text-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tierra-100 border border-tierra-200 mb-6">
+                    <div class="live-dot"></div>
+                    <span class="text-[10px] font-bold text-tierra-700 uppercase tracking-widest">Sincronizado en Vivo</span>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold text-tierra-900 mb-6 tracking-tight">Mis Pedidos</h1>
+                <p class="text-tierra-600 text-lg max-w-2xl mx-auto">Sigue el viaje de tus piezas artesanales desde nuestro taller hasta tus manos.</p>
+            </header>
+
+            <div id="orders-list" class="max-w-5xl mx-auto space-y-12">
+                <!-- Loading State -->
+                <div class="flex flex-col items-center py-20 animate-pulse text-tierra-300">
+                    <svg class="w-16 h-16 animate-spin mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <p class="font-medium">Sincronizando con el taller...</p>
+                </div>
+            </div>
+
+            <!-- Empty State (Hidden) -->
+            <div id="empty-orders" class="hidden max-w-xl mx-auto text-center py-24 bg-white rounded-[3.5rem] border border-tierra-100 shadow-2xl animate-fade-in relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-tierra-50/50 to-transparent pointer-events-none"></div>
+                <div class="relative z-10">
+                    <div class="w-24 h-24 bg-tierra-50 text-tierra-400 rounded-full flex items-center justify-center mx-auto mb-10 shadow-inner">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    </div>
+                    <h2 class="text-3xl font-bold text-tierra-900 mb-4">Aún no hay tesoros aquí</h2>
+                    <p class="text-tierra-600 mb-12 px-10">Tu colección personal de Entre Hilos comenzará a crecer en cuanto realices tu primer pedido.</p>
+                    <a href="/catalogo.html" class="inline-flex items-center gap-3 bg-tierra-900 text-white px-10 py-5 rounded-full font-bold hover:bg-tierra-700 transition-all shadow-xl hover:-translate-y-1">
+                        Ver Catálogo de Autor
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-tierra-900 text-tierra-100 py-16 rounded-t-[4rem] mx-2">
+        <div class="container mx-auto px-6 text-center">
+            <div class="flex justify-center items-center gap-3 mb-6">
+                <img src="https://i.postimg.cc/pLgfbFt1/logo-Entre-Hilos.png" alt="Entre Hilos Logo" class="h-10 w-auto object-contain brightness-0 invert opacity-90" loading="lazy" decoding="async">
+                <span class="text-2xl font-bold text-white tracking-tight">Entre Hilos</span>
+            </div>
+            <p class="text-tierra-400 opacity-80 mb-10 max-w-sm mx-auto font-light">Artesanía que cuenta historias, tejida con pasión y alma.</p>
+            <div class="border-t border-tierra-800 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-xs tracking-widest uppercase font-medium text-tierra-500">
+                <p>&copy; 2026 Entre Hilos</p>
+                <div class="flex gap-8 items-center">
+                    <a href="https://www.instagram.com/entrehilos_baq/" target="_blank" class="hover:text-white transition-all flex items-center gap-2 group lowercase">
+                        <svg class="w-4 h-4 text-tierra-400 group-hover:text-pink-400 transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        @entrehilos_baq
+                    </a>
+                    <div class="flex gap-4">
+                        <a href="#" class="hover:text-white transition-colors">Términos</a>
+                        <a href="#" class="hover:text-white transition-colors">Privacidad</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="/js/app.js"></script>
+    <script type="module" src="/js/pedidosPage.js"></script>
+</body>
+</html>

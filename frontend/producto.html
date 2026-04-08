@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pieza | Entre Hilos</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.postimg.cc">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <link rel="dns-prefetch" href="https://i.postimg.cc">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.postimg.cc">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <link rel="dns-prefetch" href="https://i.postimg.cc">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        tierra: {
+                            50: '#fdfbf7', 100: '#f7f2e8', 200: '#eedfc9',
+                            300: '#e3c5a3', 400: '#d5a377', 500: '#c88753',
+                            600: '#ba7045', 700: '#9b5839', 800: '#804a33',
+                            900: '#673c2a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: theme('colors.tierra.50'); color: theme('colors.tierra.900'); }
+        .glass-nav { background: rgba(253, 251, 247, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(227, 197, 163, 0.3); }
+        .btn-primary { background-color: #C36839; color: white; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; }
+        .btn-primary:after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%); pointer-events: none; }
+        .btn-primary:hover:not(:disabled) { background-color: #A35028; transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(195, 104, 57, 0.35), 0 10px 10px -5px rgba(195, 104, 57, 0.2); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        @keyframes springFadeIn { 
+            0% { opacity: 0; transform: translateY(40px); } 
+            50% { opacity: 1; transform: translateY(-10px); } 
+            75% { transform: translateY(5px); } 
+            100% { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-fade-in { opacity: 0; animation: springFadeIn 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar Módulo -->
+    <header class="glass-nav fixed w-full top-0 z-50 transition-all duration-300 py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <a href="/index.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                <img src="https://i.postimg.cc/pLgfbFt1/logo-Entre-Hilos.png" alt="Entre Hilos Logo" class="h-10 md:h-12 w-auto object-contain">
+                <span class="text-xl md:text-2xl font-bold tracking-tight text-tierra-900">Entre Hilos</span>
+            </a>
+            <nav class="hidden md:flex gap-8 items-center font-medium text-tierra-700">
+                <a href="/index.html" class="hover:text-tierra-500 transition-colors">Inicio</a>
+                <a href="/catalogo.html" class="hover:text-tierra-500 transition-colors">Catálogo</a>
+                <a href="/pedidos.html" id="my-orders-link" class="hidden hover:text-tierra-500 transition-colors">Mis Pedidos</a>
+                <a href="/index.html#nosotros" class="hover:text-tierra-500 transition-colors">Nosotros</a>
+            </nav>
+            <div class="flex items-center gap-4">
+                <a href="/login.html" id="auth-btn" class="text-tierra-800 hover:text-tierra-600 font-medium text-sm transition-colors border border-tierra-300 px-4 py-2 rounded-full hidden">Entrar</a>
+                
+                <div id="user-profile" class="hidden relative group">
+                    <button id="profile-btn" class="flex items-center gap-2 focus:outline-none">
+                        <div id="user-avatar" class="w-9 h-9 md:w-11 md:h-11 bg-tierra-900 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg ring-2 ring-white hover:scale-105 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                    </button>
+                    <div id="user-dropdown" class="absolute right-0 mt-3 w-48 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white p-2 hidden animate-fade-in z-[60]">
+                        <button id="logout-btn" class="w-full text-left px-4 py-3 text-sm font-semibold text-tierra-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all flex items-center gap-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+
+                <a href="/login.html" id="auth-btn" class="text-tierra-800 hover:text-tierra-600 font-medium text-sm transition-colors border border-tierra-300 px-4 py-2 rounded-full hidden">Entrar</a>
+                <button id="cart-button" class="relative text-tierra-800 hover:text-tierra-600 transition-colors p-2 rounded-full hover:bg-tierra-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    <span id="cart-count" class="absolute top-0 right-0 bg-tierra-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center transform translate-x-1 -translate-y-1 opacity-0 transition-opacity duration-300">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-32 pb-24 container mx-auto px-6 max-w-6xl">
+        <!-- Back Navigation -->
+        <a href="/catalogo.html" class="inline-flex items-center gap-2 text-tierra-600 hover:text-tierra-900 font-medium mb-10 transition-colors animate-fade-in group">
+            <span class="bg-white p-2 rounded-full shadow-sm text-tierra-800 group-hover:scale-110 transition-transform"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></span>
+            Volver al catálogo
+        </a>
+
+        <!-- States -->
+        <div id="loading-state" class="flex flex-col items-center justify-center py-32 animate-fade-in">
+            <svg class="w-12 h-12 text-tierra-800 animate-spin mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <p class="text-tierra-600 font-medium text-lg">Preparando la pieza...</p>
+        </div>
+
+        <div id="error-state" class="hidden flex flex-col items-center justify-center py-32 text-center animate-fade-in">
+            <div class="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h2 class="text-3xl font-bold text-tierra-900 mb-4">Pieza no encontrada</h2>
+            <p class="text-tierra-600 max-w-md mx-auto mb-8">Lo sentimos, esta pulsera pudo haber sido retirada del muestrario o el enlace que buscabas es incorrecto.</p>
+            <a href="/catalogo.html" class="bg-tierra-800 text-white px-8 py-3 rounded-full font-medium shadow-lg hover:bg-tierra-900 transition-colors">Regresar al catálogo libre</a>
+        </div>
+
+        <!-- Product Area -->
+        <div id="product-content" class="hidden animate-fade-in grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+            
+            <!-- Picture Left Side -->
+            <div class="w-full relative rounded-3xl overflow-hidden shadow-2xl group border border-white/50 bg-tierra-100">
+                <img id="detail-image" src="" alt="Pulsera" class="w-full aspect-square object-cover object-center group-hover:scale-105 transition-transform duration-700" decoding="async" fetchpriority="high">
+                <div id="out-of-stock-badge" class="hidden absolute top-6 right-6 bg-red-600/90 backdrop-blur-md text-white px-6 py-2 rounded-full font-bold shadow-lg transform rotate-3">
+                    Agotado
+                </div>
+            </div>
+
+            <!-- Details Right Side -->
+            <div class="flex flex-col py-6">
+                <!-- Badges -->
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="bg-tierra-200 text-tierra-900 text-xs font-bold px-3 py-1 uppercase tracking-widest rounded-full">Hecho Artesanalmente</span>
+                    <span id="detail-stock-badge" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full hidden">Pocas unidades</span>
+                </div>
+
+                <h1 id="detail-title" class="text-4xl md:text-5xl font-bold text-tierra-900 mb-4 leading-tight"></h1>
+                <p id="detail-price" class="text-3xl font-light text-tierra-700 mb-8"></p>
+
+                <div class="w-full h-px bg-tierra-200 mb-8"></div>
+
+                <div class="mb-10">
+                    <h3 class="text-sm font-bold text-tierra-900 uppercase tracking-widest mb-3">La Historia Detrás</h3>
+                    <p id="detail-desc" class="text-tierra-700 leading-relaxed text-lg whitespace-pre-line text-balance"></p>
+                </div>
+
+                <div class="mt-auto bg-white p-6 rounded-3xl shadow-sm border border-tierra-100 flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div class="w-full md:w-auto">
+                        <p class="text-sm font-bold text-tierra-600 uppercase tracking-wide mb-1">Cantidad de Entrada</p>
+                        <div class="flex items-center border border-tierra-300 rounded-xl max-w-fit bg-tierra-50">
+                            <button id="qty-minus" class="px-4 py-3 text-tierra-600 hover:text-tierra-900 hover:bg-tierra-200 rounded-l-xl transition-colors font-bold text-lg leading-none">−</button>
+                            <span id="qty-display" class="px-4 py-3 font-bold text-tierra-900 font-mono text-center min-w-[3rem]">1</span>
+                            <button id="qty-plus" class="px-4 py-3 text-tierra-600 hover:text-tierra-900 hover:bg-tierra-200 rounded-r-xl transition-colors font-bold text-lg leading-none">+</button>
+                        </div>
+                    </div>
+                    
+                    <button id="add-detail-btn" class="btn-primary w-full md:flex-1 py-4 px-8 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 h-14 mt-6 md:mt-0 shadow-xl shadow-tierra-900/10">
+                        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        <span>Añadir a mi Canasta</span>
+                    </button>
+                </div>
+
+                <!-- Footer micro text -->
+                <ul class="mt-8 space-y-2 text-sm text-tierra-500 font-medium opacity-80">
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-tierra-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Pago asegurado 100% Criptográficamente.
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-tierra-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Atención personalizada vía correo tras la orden.
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Módulo -->
+    <footer class="bg-tierra-900 text-tierra-100 py-12 rounded-t-[3rem] mx-2 mt-auto">
+        <div class="container mx-auto px-6 text-center">
+            <div class="flex justify-center items-center gap-3 mb-6">
+                <img src="https://i.postimg.cc/pLgfbFt1/logo-Entre-Hilos.png" alt="Entre Hilos Logo" class="h-10 w-auto object-contain brightness-0 invert opacity-90" loading="lazy" decoding="async">
+                <span class="text-2xl font-bold text-white tracking-tight">Entre Hilos</span>
+            </div>
+            <p class="text-tierra-300 opacity-80 mb-8 max-w-md mx-auto">Tejiendo emociones e historias a través del arte manual. Un producto a la vez.</p>
+            <div class="border-t border-tierra-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 opacity-70 text-sm">
+                <p>&copy; 2026 Entre Hilos. Todos los derechos reservados.</p>
+                <div class="flex gap-6">
+                    <a href="https://www.instagram.com/entrehilos_baq/" target="_blank" class="hover:text-white transition-all flex items-center gap-2 group lowercase">
+                        <svg class="w-4 h-4 text-tierra-400 group-hover:text-pink-400 transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        Instagram
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- App / Auth Modules -->
+    <script type="module" src="/js/app.js"></script>
+    <script type="module" src="/js/productoPage.js"></script>
+</body>
+</html>

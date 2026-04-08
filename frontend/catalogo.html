@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo | Entre Hilos</title>
+    <meta name="description" content="Explora nuestro catálogo de pulseras artesanales únicas.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.postimg.cc">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <link rel="dns-prefetch" href="https://i.postimg.cc">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        tierra: {
+                            50: '#fdfbf7', 100: '#f7f2e8', 200: '#eedfc9',
+                            300: '#e3c5a3', 400: '#d5a377', 500: '#c88753',
+                            600: '#ba7045', 700: '#9b5839', 800: '#804a33',
+                            900: '#673c2a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background-color: theme('colors.tierra.50'); color: theme('colors.tierra.900'); scroll-behavior: smooth; }
+        .glass-nav { background: rgba(253, 251, 247, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(227, 197, 163, 0.3); }
+        .product-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(200, 135, 83, 0.15), 0 10px 10px -5px rgba(200, 135, 83, 0.04); }
+        .product-image-container { overflow: hidden; }
+        .product-image { transition: transform 0.7s ease; }
+        .product-card:hover .product-image { transform: scale(1.08); }
+        .btn-primary { background-color: theme('colors.tierra.800'); color: white; transition: all 0.3s ease; position: relative; overflow: hidden; }
+        .btn-primary:hover:not(:disabled) { background-color: theme('colors.tierra.900'); transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(103, 60, 42, 0.2); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        @keyframes springFadeIn { 
+            0% { opacity: 0; transform: translateY(40px); } 
+            50% { opacity: 1; transform: translateY(-10px); } 
+            75% { transform: translateY(5px); } 
+            100% { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-fade-in { opacity: 0; animation: springFadeIn 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+    </style>
+</head>
+
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar Módulo -->
+    <header class="glass-nav fixed w-full top-0 z-50 transition-all duration-300 py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <a href="/index.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                <img src="https://i.postimg.cc/pLgfbFt1/logo-Entre-Hilos.png" alt="Entre Hilos Logo" class="h-10 md:h-12 w-auto object-contain">
+                <span class="text-xl md:text-2xl font-bold tracking-tight text-tierra-900">Entre Hilos</span>
+            </a>
+            <nav class="hidden md:flex gap-8 items-center font-medium text-tierra-700">
+                <a href="/index.html" class="hover:text-tierra-500 transition-colors">Inicio</a>
+                <a href="/catalogo.html" class="text-tierra-900 border-b-2 border-tierra-500 pb-1">Catálogo</a>
+                <a href="/pedidos.html" id="my-orders-link" class="hidden hover:text-tierra-500 transition-colors">Mis Pedidos</a>
+                <a href="/index.html#nosotros" class="hover:text-tierra-500 transition-colors">Nosotros</a>
+            </nav>
+            <div class="flex items-center gap-4">
+                <a href="/login.html" id="auth-btn" class="text-tierra-800 hover:text-tierra-600 font-medium text-sm transition-colors border border-tierra-300 px-4 py-2 rounded-full hidden">Entrar</a>
+                
+                <div id="user-profile" class="hidden relative group">
+                    <button id="profile-btn" class="flex items-center gap-2 focus:outline-none">
+                        <div id="user-avatar" class="w-9 h-9 md:w-11 md:h-11 bg-tierra-900 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg ring-2 ring-white hover:scale-105 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                    </button>
+                    <div id="user-dropdown" class="absolute right-0 mt-3 w-48 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white p-2 hidden animate-fade-in z-[60]">
+                        <button id="logout-btn" class="w-full text-left px-4 py-3 text-sm font-semibold text-tierra-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all flex items-center gap-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+
+                <button id="cart-button" class="relative text-tierra-800 hover:text-tierra-600 transition-colors p-2 rounded-full hover:bg-tierra-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    <span id="cart-count" class="absolute top-0 right-0 bg-tierra-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center transform translate-x-1 -translate-y-1 opacity-0 transition-opacity duration-300">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-32 pb-24 container mx-auto px-6">
+        <div class="text-center mb-12 animate-fade-in" style="animation-delay: 0.1s;">
+            <h1 class="text-4xl md:text-5xl font-bold text-tierra-900 mb-4">Catálogo Principal</h1>
+            <div class="w-24 h-1 bg-tierra-400 mx-auto rounded-full mb-6"></div>
+            <p class="text-tierra-600 max-w-xl mx-auto text-lg">Encuentra la pieza perfecta elaborada minuciosamente por las manos de nuestros artesanos.</p>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-10 animate-fade-in" style="animation-delay: 0.2s;">
+            <!-- Search Bar -->
+            <div class="relative w-full md:max-w-md">
+                <input type="text" id="search-input" placeholder="Buscar modelo o pieza..." class="w-full bg-white border border-tierra-200 text-tierra-900 rounded-full pl-6 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-tierra-500 shadow-sm transition-all focus:-translate-y-1">
+                <div class="absolute right-5 top-3.5 text-tierra-400">
+                    <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+            </div>
+            
+            <!-- Sort Dropdown -->
+            <div class="relative w-full md:w-auto">
+                <select id="sort-select" class="w-full md:w-56 bg-white border border-tierra-200 text-tierra-700 font-medium rounded-full pl-5 pr-10 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-tierra-500 shadow-sm cursor-pointer transition-all hover:bg-tierra-50">
+                    <option value="default">Recomendados</option>
+                    <option value="price-asc">Precio: Menor a Mayor</option>
+                    <option value="price-desc">Precio: Mayor a Menor</option>
+                    <option value="name-asc">Nombre: A - Z</option>
+                </select>
+                <div class="absolute right-4 top-4 pointer-events-none text-tierra-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+            <!-- Loading Skeletons -->
+            <div class="bg-white rounded-2xl shadow-sm p-4 animate-pulse"><div class="w-full h-64 bg-tierra-200 rounded-xl mb-4"></div><div class="h-6 bg-tierra-200 rounded w-3/4 mb-2"></div><div class="h-4 bg-tierra-200 rounded w-1/2 mb-4"></div><div class="h-10 bg-tierra-200 rounded-full w-full"></div></div>
+            <div class="bg-white rounded-2xl shadow-sm p-4 animate-pulse"><div class="w-full h-64 bg-tierra-200 rounded-xl mb-4"></div><div class="h-6 bg-tierra-200 rounded w-3/4 mb-2"></div><div class="h-4 bg-tierra-200 rounded w-1/2 mb-4"></div><div class="h-10 bg-tierra-200 rounded-full w-full"></div></div>
+            <div class="bg-white rounded-2xl shadow-sm p-4 animate-pulse hidden sm:block"><div class="w-full h-64 bg-tierra-200 rounded-xl mb-4"></div><div class="h-6 bg-tierra-200 rounded w-3/4 mb-2"></div><div class="h-4 bg-tierra-200 rounded w-1/2 mb-4"></div><div class="h-10 bg-tierra-200 rounded-full w-full"></div></div>
+        </div>
+
+        <div id="products-empty" class="hidden text-center py-20">
+            <h3 class="text-2xl font-medium text-tierra-700">No hay pulseras disponibles por ahora.</h3>
+            <p class="text-tierra-500 mt-2">Vuelve pronto para descubrir nuevas creaciones.</p>
+        </div>
+    </main>
+
+    <!-- Footer Módulo -->
+    <footer class="bg-tierra-900 text-tierra-100 py-12 rounded-t-[3rem] mx-2 mt-auto">
+        <div class="container mx-auto px-6 text-center">
+            <div class="flex justify-center items-center gap-3 mb-6">
+                <img src="https://i.postimg.cc/pLgfbFt1/logo-Entre-Hilos.png" alt="Entre Hilos Logo" class="h-10 w-auto object-contain brightness-0 invert opacity-90" loading="lazy" decoding="async">
+                <span class="text-2xl font-bold text-white tracking-tight">Entre Hilos</span>
+            </div>
+            <p class="text-tierra-300 opacity-80 mb-8 max-w-md mx-auto">Tejiendo emociones e historias a través del arte manual.</p>
+            <div class="border-t border-tierra-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 opacity-70 text-sm">
+                <p>&copy; 2026 Entre Hilos.</p>
+                <div class="flex gap-6">
+                    <a href="https://www.instagram.com/entrehilos_baq/" target="_blank" class="hover:text-white transition-all flex items-center gap-2 group lowercase">
+                        <svg class="w-4 h-4 text-tierra-400 group-hover:text-pink-400 transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        Instagram
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="/js/app.js"></script>
+    <script type="module" src="/js/catalogoPage.js"></script>
+</body>
+</html>

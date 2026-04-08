@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Entre Hilos</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.postimg.cc">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <link rel="dns-prefetch" href="https://i.postimg.cc">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        tierra: {
+                            50: '#fdfbf7', 100: '#f7f2e8', 200: '#eedfc9',
+                            300: '#e3c5a3', 400: '#d5a377', 500: '#c88753',
+                            600: '#ba7045', 700: '#9b5839', 800: '#804a33',
+                            900: '#673c2a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background-color: theme('colors.tierra.50'); color: theme('colors.tierra.900'); }
+        .sidebar { transition: transform 0.3s ease; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: theme('colors.tierra.300'); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: theme('colors.tierra.400'); }
+        
+        @keyframes springFadeIn { 
+            0% { opacity: 0; transform: translateY(40px); } 
+            50% { opacity: 1; transform: translateY(-10px); } 
+            75% { transform: translateY(5px); } 
+            100% { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-fade-in { opacity: 0; animation: springFadeIn 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+    </style>
+</head>
+<body class="antialiased h-screen flex overflow-hidden">
+
+    <!-- Auth Protection / Loading Screen -->
+    <div id="admin-auth-guard" class="fixed inset-0 bg-tierra-50 z-[100] flex flex-col justify-center items-center">
+        <svg class="w-12 h-12 text-tierra-800 animate-spin mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <p class="text-tierra-700 font-medium tracking-wide">Validando privilegios...</p>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar w-64 bg-tierra-900 text-white flex flex-col fixed md:relative z-40 h-full shadow-2xl rounded-tr-3xl rounded-br-3xl">
+        <div class="h-20 flex items-center px-6 border-b border-white/10">
+            <a href="/index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <img src="https://i.postimg.cc/pLgfbFt1/logo-Entre-Hilos.png" alt="Logo" class="h-10 w-auto">
+                <span class="text-lg font-bold tracking-tight text-white">Entre Hilos</span>
+            </a>
+            <button id="close-sidebar" class="ml-auto md:hidden text-white/50 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <nav class="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
+            <a href="#" id="menu-inventory" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/10 text-white font-medium border border-white/10 transition-all hover:bg-white/20">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                Inventario
+            </a>
+            <a href="#" id="menu-orders" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/60 hover:bg-white/5 hover:text-white font-medium transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                Pedidos <span id="pending-orders-badge" class="hidden text-[10px] ml-auto bg-red-500 px-2 rounded-full text-white">!</span>
+            </a>
+        </nav>
+        
+        <div class="p-6 border-t border-white/10 text-sm text-white/50 text-center">
+            &copy; 2026 Admin
+        </div>
+    </aside>
+
+    <div id="sidebar-overlay" class="fixed inset-0 bg-tierra-900/40 z-30 hidden md:hidden backdrop-blur-sm"></div>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <div class="absolute -top-32 -left-32 w-[30rem] h-[30rem] bg-tierra-200/40 rounded-full blur-3xl mix-blend-multiply pointer-events-none"></div>
+
+        <!-- Top Header -->
+        <header class="h-20 bg-white/60 backdrop-blur-md border-b border-tierra-200/50 flex items-center justify-between px-6 shadow-sm z-10 relative">
+            <div class="flex items-center gap-4">
+                <button id="open-sidebar" class="md:hidden text-tierra-600 hover:text-tierra-900 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <h1 class="text-2xl font-bold text-tierra-900">Inventario Central</h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 mr-4 pr-4 border-r border-tierra-200/50 hidden md:flex">
+                    <div class="text-right">
+                        <p id="admin-name" class="text-xs font-bold text-tierra-900 leading-none mb-1">Cargando...</p>
+                        <p class="text-[10px] text-tierra-400 font-medium">Administrador</p>
+                    </div>
+                </div>
+
+                <div id="user-profile" class="relative group">
+                    <button id="profile-btn" class="flex items-center gap-2 focus:outline-none">
+                        <div id="user-avatar" class="w-10 h-10 rounded-full bg-tierra-900 text-white flex items-center justify-center font-bold shadow-lg ring-2 ring-white hover:scale-105 transition-transform">
+                            EH
+                        </div>
+                    </button>
+                    <div id="user-dropdown" class="absolute right-0 mt-3 w-48 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white p-2 hidden animate-fade-in z-[60]">
+                        <button id="logout-btn" class="w-full text-left px-4 py-3 text-sm font-semibold text-tierra-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all flex items-center gap-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-6 lg:p-8 relative z-10 hidden" id="admin-main-content">
+            <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-3"></div>
+
+            <!-- SECCIÓN INVENTARIO -->
+            <div id="section-inventory" class="max-w-7xl mx-auto space-y-8 animate-fade-in">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- ADD PRODUCT -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-white overflow-hidden sticky top-0">
+                            <div class="p-6 border-b border-tierra-100 bg-tierra-50/50 flex justify-between items-center">
+                                <h2 class="text-lg font-bold text-tierra-900 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-tierra-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    Nueva Pieza
+                                </h2>
+                            </div>
+                            
+                            <form id="add-product-form" class="p-6 space-y-5">
+                                <div>
+                                    <label class="block text-sm font-medium text-tierra-700 mb-1">Nombre *</label>
+                                    <input type="text" id="name" required class="w-full rounded-xl border border-tierra-200 bg-white/50 px-4 py-2 text-tierra-900 focus:border-tierra-600 focus:ring-2 focus:ring-tierra-600/20 focus:outline-none transition-all shadow-inner" placeholder="Ej. Pulsera Coral">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-tierra-700 mb-1">Imagen de la Pieza *</label>
+                                    <div class="space-y-3">
+                                        <!-- URL Input -->
+                                        <input type="url" id="image_url" class="w-full rounded-xl border border-tierra-200 bg-white/50 px-4 py-2 text-tierra-900 focus:border-tierra-600 focus:ring-2 focus:ring-tierra-600/20 focus:outline-none transition-all shadow-inner text-xs" placeholder="Enlace de imagen existente...">
+                                        
+                                        <!-- O Divider -->
+                                        <div class="flex items-center gap-4">
+                                            <div class="h-px bg-tierra-200 flex-1"></div>
+                                            <span class="text-[10px] uppercase font-bold text-tierra-400">O sube un archivo</span>
+                                            <div class="h-px bg-tierra-200 flex-1"></div>
+                                        </div>
+
+                                        <!-- File Input -->
+                                        <div class="relative group">
+                                            <input type="file" id="image-file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                            <div id="file-drop-zone" class="border-2 border-dashed border-tierra-200 rounded-2xl p-4 text-center group-hover:border-tierra-400 transition-colors bg-tierra-50/30">
+                                                <div class="text-tierra-500 text-xs font-medium" id="file-label">Haz clic o arrastra una imagen</div>
+                                                <div id="image-preview" class="hidden mt-3 w-20 h-20 mx-auto rounded-lg overflow-hidden border border-white shadow-md">
+                                                    <img src="" class="w-full h-full object-cover">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-tierra-700 mb-1">Historia / Descripción</label>
+                                    <textarea id="description" rows="3" class="w-full rounded-xl border border-tierra-200 bg-white/50 px-4 py-2 text-tierra-900 focus:border-tierra-600 focus:ring-2 focus:ring-tierra-600/20 focus:outline-none transition-all shadow-inner" placeholder="Sobre los nudos y orígenes..."></textarea>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-tierra-700 mb-1">Precio *</label>
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-tierra-500 font-medium">$</div>
+                                            <input type="number" id="price" required min="0" step="0.01" class="w-full rounded-xl border border-tierra-200 bg-white/50 pl-8 pr-4 py-2 text-tierra-900 focus:border-tierra-600 focus:ring-2 focus:ring-tierra-600/20 focus:outline-none transition-all shadow-inner" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-tierra-700 mb-1">Existencias</label>
+                                        <input type="number" id="stock" min="0" value="1" class="w-full rounded-xl border border-tierra-200 bg-white/50 px-4 py-2 text-tierra-900 focus:border-tierra-600 focus:ring-2 focus:ring-tierra-600/20 focus:outline-none transition-all shadow-inner">
+                                    </div>
+                                </div>
+
+
+
+                                <div class="flex gap-4 mt-6">
+                                    <button type="button" id="cancel-edit-btn" class="hidden bg-tierra-200 hover:bg-tierra-300 text-tierra-800 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" id="submit-btn" class="flex-1 bg-tierra-900 hover:bg-tierra-800 text-white font-bold py-3.5 px-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-lg shadow-tierra-900/20 hover:-translate-y-1">
+                                        Crear Producto
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- PRODUCTS LIST -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-white overflow-hidden flex flex-col h-[700px]">
+                            <div class="p-6 border-b border-tierra-100 bg-tierra-50/50 flex justify-between items-center">
+                                <h2 class="text-lg font-bold text-tierra-900">Tus Pulseras</h2>
+                                <button onclick="loadProducts()" class="p-2 text-tierra-600 hover:text-tierra-900 hover:bg-tierra-200 rounded-lg transition-colors border border-tierra-200 bg-white" title="Actualizar">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                </button>
+                            </div>
+                            
+                            <div class="flex-1 overflow-auto">
+                                <table class="min-w-full divide-y divide-tierra-200/50 relative">
+                                    <thead class="bg-tierra-50/90 sticky top-0 z-10 backdrop-blur-md">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-tierra-600 uppercase tracking-wider">Arte</th>
+                                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-tierra-600 uppercase tracking-wider">Precio</th>
+                                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-tierra-600 uppercase tracking-wider">Stock</th>
+                                            <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-tierra-600 uppercase tracking-wider">Borrar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="products-table-body" class="bg-transparent divide-y divide-tierra-100">
+                                        <!-- Skeletons loaded via JS initially -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN PEDIDOS -->
+            <div id="section-orders" class="max-w-7xl mx-auto space-y-8 animate-fade-in hidden">
+                <div class="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-white overflow-hidden flex flex-col h-[700px]">
+                    <div class="p-6 border-b border-tierra-100 bg-tierra-50/50 flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-tierra-900">Pedidos de Artesanías</h2>
+                        <button onclick="loadOrders()" class="p-2 text-tierra-600 hover:text-tierra-900 hover:bg-tierra-200 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-auto">
+                        <table class="min-w-full divide-y divide-tierra-200/50 relative">
+                            <thead class="bg-tierra-50/90 sticky top-0 z-10 backdrop-blur-md italic text-xs font-bold text-tierra-600 uppercase">
+                                <tr>
+                                    <th class="px-6 py-4 text-left">Pedido</th>
+                                    <th class="px-6 py-4 text-left">Items</th>
+                                    <th class="px-6 py-4 text-left">Total</th>
+                                    <th class="px-6 py-4 text-left">Estado</th>
+                                    <th class="px-6 py-4 text-right">Confirmar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="divide-y divide-tierra-100 italic"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- App / Auth Modules -->
+    <script type="module" src="/js/admin.js"></script>
+    <script>
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        function toggleSidebar() { sidebar.classList.toggle('open'); overlay.classList.toggle('hidden'); }
+        document.getElementById('open-sidebar').addEventListener('click', toggleSidebar);
+        document.getElementById('close-sidebar').addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+    </script>
+</body>
+</html>

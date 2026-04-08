@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso | Entre Hilos</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.postimg.cc">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <link rel="dns-prefetch" href="https://i.postimg.cc">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                colors: { tierra: { 50: '#fdfbf7', 100: '#f7f2e8', 200: '#eedfc9', 300: '#e3c5a3', 400: '#d5a377', 500: '#c88753', 600: '#ba7045', 700: '#9b5839', 800: '#804a33', 900: '#673c2a' } } }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="antialiased min-h-screen bg-tierra-50 flex items-center justify-center relative font-sans p-6 py-12 overflow-x-hidden overflow-y-auto">
+    <!-- Decoración de Fondo -->
+    <div class="absolute -top-32 -left-32 w-[30rem] h-[30rem] bg-tierra-200/40 rounded-full blur-3xl mix-blend-multiply"></div>
+    <div class="absolute -bottom-32 -right-32 w-[40rem] h-[40rem] bg-tierra-300/30 rounded-full blur-3xl mix-blend-multiply"></div>
+
+    <div class="w-full max-w-lg bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl p-10 relative z-10 border border-white">
+        
+        <!-- Flecha Atrás -->
+        <a href="/index.html" class="absolute top-6 left-6 text-tierra-500 hover:text-tierra-800 transition-colors p-2 bg-white/50 rounded-full shadow-sm hover:shadow-md">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </a>
+
+        <div class="text-center mt-6 mb-10">
+            <div class="mb-4 flex flex-col items-center gap-4">
+                <img src="https://i.postimg.cc/pLgfbFt1/logo-Entre-Hilos.png" alt="Entre Hilos Logo" class="h-24 w-auto object-contain drop-shadow-lg">
+                <h1 class="text-3xl font-bold tracking-tight text-tierra-900">Entre Hilos</h1>
+            </div>
+            <p class="text-tierra-600 text-sm">Entra para acceder a tu historial y guardar el carrito.</p>
+        </div>
+
+        <div class="space-y-5">
+            <!-- Invitado -->
+            <button id="btn-guest-login" class="w-full flex items-center justify-center gap-3 bg-white border border-tierra-200 hover:border-tierra-400 hover:bg-tierra-50 text-tierra-800 font-semibold py-4 rounded-2xl shadow-sm transition-all hover:shadow-md">
+                <svg class="w-5 h-5 text-tierra-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                Continuar comprando como Invitado
+            </button>
+            
+            <!-- Tabs Navigation -->
+            <div class="flex border-b border-tierra-200 mb-8">
+                <button id="tab-login" class="flex-1 py-4 text-sm font-bold border-b-2 border-tierra-600 text-tierra-900 transition-all">Iniciar Sesión</button>
+                <button id="tab-register" class="flex-1 py-4 text-sm font-medium text-tierra-500 hover:text-tierra-700 transition-all border-b-2 border-transparent">Crear Cuenta</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <input type="email" id="login-email" placeholder="Correo electrónico" required class="w-full bg-white/80 rounded-xl border border-tierra-200 px-5 py-4 text-tierra-900 focus:outline-none focus:border-tierra-500 focus:ring-2 focus:ring-tierra-500/20 transition-all font-medium placeholder-tierra-400">
+                </div>
+                <div>
+                    <input type="password" id="login-password" placeholder="Contraseña" required class="w-full bg-white/80 rounded-xl border border-tierra-200 px-5 py-4 text-tierra-900 focus:outline-none focus:border-tierra-500 focus:ring-2 focus:ring-tierra-500/20 transition-all font-medium placeholder-tierra-400">
+                </div>
+                
+                <div id="login-error-container" class="hidden bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <p id="login-error"></p>
+                </div>
+                
+                <button type="submit" class="w-full bg-tierra-900 hover:bg-tierra-800 text-white font-semibold py-4 rounded-xl transition-all shadow-xl shadow-tierra-900/20 transform hover:-translate-y-0.5">
+                    Entrar
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="space-y-4 hidden">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="reg-first-name" placeholder="Nombre" required class="w-full bg-white/80 rounded-xl border border-tierra-200 px-5 py-4 text-tierra-900 focus:outline-none focus:border-tierra-500 focus:ring-2 focus:ring-tierra-500/20 transition-all font-medium placeholder-tierra-400">
+                    <input type="text" id="reg-last-name" placeholder="Apellido" required class="w-full bg-white/80 rounded-xl border border-tierra-200 px-5 py-4 text-tierra-900 focus:outline-none focus:border-tierra-500 focus:ring-2 focus:ring-tierra-500/20 transition-all font-medium placeholder-tierra-400">
+                </div>
+                <div>
+                    <input type="tel" id="reg-phone" placeholder="Número de celular" required class="w-full bg-white/80 rounded-xl border border-tierra-200 px-5 py-4 text-tierra-900 focus:outline-none focus:border-tierra-500 focus:ring-2 focus:ring-tierra-500/20 transition-all font-medium placeholder-tierra-400">
+                </div>
+                <div>
+                    <input type="email" id="reg-email" placeholder="Correo electrónico" required class="w-full bg-white/80 rounded-xl border border-tierra-200 px-5 py-4 text-tierra-900 focus:outline-none focus:border-tierra-500 focus:ring-2 focus:ring-tierra-500/20 transition-all font-medium placeholder-tierra-400">
+                </div>
+                <div>
+                    <input type="password" id="reg-password" placeholder="Contraseña (mínimo 6 caracteres)" required minlength="6" class="w-full bg-white/80 rounded-xl border border-tierra-200 px-5 py-4 text-tierra-900 focus:outline-none focus:border-tierra-500 focus:ring-2 focus:ring-tierra-500/20 transition-all font-medium placeholder-tierra-400">
+                </div>
+
+                <div id="reg-error-container" class="hidden bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <p id="reg-error"></p>
+                </div>
+
+                <button type="submit" class="w-full bg-tierra-900 hover:bg-tierra-800 text-white font-semibold py-4 rounded-xl transition-all shadow-xl shadow-tierra-900/20 transform hover:-translate-y-0.5">
+                    Crear Cuenta
+                </button>
+            </form>
+            
+            <p class="text-center text-tierra-500 text-sm mt-6 tracking-wide">
+                Al continuar, aceptas nuestra <a href="#" class="border-b border-tierra-400 text-tierra-700 font-medium hover:text-tierra-900">política de privacidad</a>.
+            </p>
+        </div>
+    </div>
+
+    <!-- Firebase System Injection -->
+    <script type="module" src="/js/loginPage.js"></script>
+</body>
+</html>
