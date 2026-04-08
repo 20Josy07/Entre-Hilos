@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
     const userAvatar = document.getElementById('user-avatar');
     const adminNameEl = document.getElementById('admin-name');
-    
+
     const productForm = document.getElementById('add-product-form');
     const productsTableBody = document.getElementById('products-table-body');
     const ordersTableBody = document.getElementById('orders-table-body');
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!userData || userData.esAdmin !== true) {
                 // No es administrador: Cerrar sesión y expulsar
                 console.warn("Acceso no autorizado intentado por:", user.email);
-                
+
                 await Swal.fire({
                     title: 'Acceso Denegado',
                     text: 'No tienes permisos de administrador para ingresar a esta sección.',
@@ -80,16 +80,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     confirmButtonColor: '#673c2a',
                     confirmButtonText: 'Entendido'
                 });
-                
+
                 await signOut(auth);
                 window.location.href = "/index.html";
                 return;
             }
-            
+
             // Si es administrador, continuar
             authGuardContainer.classList.add('hidden');
             mainContentContainer.classList.remove('hidden');
-            
+
             renderUserProfile(user, userData);
             loadProducts();
         } catch (error) {
@@ -110,13 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userData) {
                 const firstName = userData.first_name || '';
                 const lastName = userData.last_name || '';
-                
+
                 if (firstName) {
                     if (adminNameEl) adminNameEl.textContent = `${firstName} ${lastName}`.trim();
                     initials = (firstName[0] + (lastName ? lastName[0] : '')).toUpperCase();
                 }
             }
-            
+
             // 2. Auth DisplayName Fallback
             if (!initials && user.displayName) {
                 const parts = user.displayName.split(' ');
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!initials) initials = "A"; // Default Admin
 
             userAvatar.innerHTML = `<span class="tracking-tighter">${initials}</span>`;
-            
+
         } catch (err) {
             console.error("Error rendering admin profile:", err);
             if (user.email) {
@@ -191,11 +191,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const toastContainer = document.getElementById('toast-container');
         const toast = document.createElement('div');
         const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-        
+
         toast.className = `flex items-center w-full max-w-xs p-4 text-white ${bgColor} rounded-xl shadow-lg transform transition-all duration-300 translate-x-full opacity-0`;
         toast.innerHTML = `<div class="ml-3 text-sm font-bold tracking-wide">${message}</div>`;
         toastContainer.appendChild(toast);
-        
+
         requestAnimationFrame(() => {
             toast.classList.remove('translate-x-full', 'opacity-0');
             toast.classList.add('translate-x-0', 'opacity-100');
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         submitBtn.disabled = true;
         submitBtn.textContent = 'Guardando...';
 
@@ -371,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const url = editingId ? `${API_URL}/products/${editingId}` : `${API_URL}/products`;
             const method = editingId ? 'PUT' : 'POST';
-            
+
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
@@ -387,11 +387,11 @@ document.addEventListener('DOMContentLoaded', () => {
             fileLabel.textContent = 'Haz clic o arrastra una imagen';
             editingId = null;
             submitBtn.textContent = 'Crear Producto';
-            if(cancelBtn) cancelBtn.classList.add('hidden');
+            if (cancelBtn) cancelBtn.classList.add('hidden');
             loadProducts();
-        } catch (error) { 
+        } catch (error) {
             console.error(error);
-            showToast(error.message || 'Error al guardar', 'error'); 
+            showToast(error.message || 'Error al guardar', 'error');
         } finally {
             submitBtn.disabled = false;
         }
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const { data: orders } = await res.json();
             renderOrdersTable(orders);
-            
+
             // Update badge (already implemented)
             const pending = orders.filter(o => o.status === 'Pendiente').length;
             if (pending > 0) {
@@ -419,8 +419,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 pendingOrdersBadge.classList.add('hidden');
             }
-        } catch (error) { 
-            if (!silent) showToast('Error al cargar pedidos', 'error'); 
+        } catch (error) {
+            if (!silent) showToast('Error al cargar pedidos', 'error');
         }
     };
 
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             const isPending = order.status === 'Pendiente';
             const isExpanded = expandedOrderId === order.id;
-            
+
             tr.className = `cursor-pointer transition-all hover:bg-tierra-50/50 ${isExpanded ? 'bg-tierra-50 shadow-inner' : ''}`;
             tr.innerHTML = `
                 <td class="px-6 py-4">
@@ -528,16 +528,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <h4 class="text-xs font-bold text-tierra-400 uppercase tracking-widest mb-4">Actualizar Estado del Pedido</h4>
                                     <div class="flex flex-wrap gap-2">
                                         ${['Confirmado', 'En Preparación', 'Enviado', 'Entregado', 'Cancelado'].map(status => {
-                                            const isActive = order.status === status;
-                                            const colors = getStatusColors(status);
-                                            return `
+                    const isActive = order.status === status;
+                    const colors = getStatusColors(status);
+                    return `
                                                 <button class="status-update-btn flex-1 min-w-[120px] px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all border 
                                                     ${isActive ? `${colors.bg} ${colors.text} ${colors.border}` : 'bg-white text-tierra-400 border-tierra-200 hover:border-tierra-400'}"
                                                     data-id="${order.id}" data-status="${status}">
                                                     ${status}
                                                 </button>
                                             `;
-                                        }).join('')}
+                }).join('')}
                                     </div>
                                     <p class="text-[10px] text-tierra-400 mt-4 italic">
                                         * Al marcar como <span class="font-bold underline">Confirmado</span> por primera vez, se descontará automáticamente el stock del catálogo.
@@ -548,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </td>
                 `;
                 ordersTableBody.appendChild(detailTr);
-                
+
                 // Add event listeners within the expanded panel
                 detailTr.querySelectorAll('.status-update-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
@@ -576,22 +576,22 @@ document.addEventListener('DOMContentLoaded', () => {
     async function updateOrderStatus(id, status) {
         if (status === 'Confirmado' && !confirm('¿Deseas confirmar este pedido? Esto descontará el stock (si el pedido estaba pendiente).')) return;
         if (status === 'Cancelado' && !confirm('¿Estás seguro de cancelar este pedido?')) return;
-        
+
         try {
             const res = await fetch(`${API_URL}/orders/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
                 body: JSON.stringify({ status })
             });
-            
+
             if (!res.ok) throw new Error("Fallo al actualizar el estado");
-            
+
             showToast(`Pedido actualizado a: ${status}`);
             loadOrders(true); // Silent reload to keep the order expanded
-            loadProducts(); 
-        } catch (error) { 
+            loadProducts();
+        } catch (error) {
             console.error(error);
-            showToast('Error al actualizar pedido', 'error'); 
+            showToast('Error al actualizar pedido', 'error');
         }
     }
 
