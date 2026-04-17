@@ -8,13 +8,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebas
 // NOTE: This firebaseConfig MUST be replaced by the user's actual Firebase configuration.
 // The placeholder values here will not work.
 const firebaseConfig = {
-    apiKey: "AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    authDomain: "example.firebaseapp.com",
-    projectId: "example-project",
-    storageBucket: "example.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:xxxxxxxxxxxxxxxxx"
-};
+    apiKey: "AIzaSyCl8uUOMIhkJk2Rpojt6AElQjjxvC0e1bw",
+    authDomain: "entre-hilos-c798a.firebaseapp.com",
+    projectId: "entre-hilos-c798a",
+    storageBucket: "entre-hilos-c798a.firebasestorage.app",
+    messagingSenderId: "833894892237",
+    appId: "1:833894892237:web:85020432069abf06201f84",
+    measurementId: "G-VXK5RFZFSZ"
+  };
 
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig);
