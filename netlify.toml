@@ -4,12 +4,14 @@
 [functions]
   directory = "netlify/functions"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
+# Rule for API requests (MUST BE FIRST)
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# Rule for Single Page Application (SPA) - general catch-all (MUST BE LAST)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
