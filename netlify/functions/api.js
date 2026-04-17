@@ -1,21 +1,18 @@
-const express = require('express');
 const serverless = require('serverless-http');
+const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-
-// Load environment variables immediately
-dotenv.config();
-
-// ***** CRITICAL FIX: INITIALIZE FIREBASE ADMIN *****
-// This ensures Firebase is initialized before any routes or middleware are called.
-// By requiring it here, we guarantee that the admin app is ready for auth checks
-// and database operations throughout the application lifecycle.
-require('../../backend/config/database');
-
 const productRoutes = require('../../backend/routes/productRoutes');
 const orderRoutes = require('../../backend/routes/orderRoutes');
 const cartRoutes = require('../../backend/routes/cartRoutes');
 const userRoutes = require('../../backend/routes/userRoutes');
+const { connectDB } = require('../../backend/config/database');
+
+// Load environment variables
+dotenv.config();
+
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 
@@ -23,12 +20,12 @@ const app = express();
 const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    process.env.ALLOWED_ORIGIN  // e.g. https://entre-hilos.netlify.app
+    'https://entre-hilos-store.netlify.app', // Added the new frontend URL
+    process.env.ALLOWED_ORIGIN
 ].filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (e.g. curl, Postman, same-origin)
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -37,7 +34,7 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json({ limit: '5mb' })); // Parse JSON bodies (5mb for base64 images)
+app.use(express.json({ limit: '5mb' }));
 
 // Routes
 app.use('/api/products', productRoutes);
