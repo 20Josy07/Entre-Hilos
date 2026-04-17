@@ -2,13 +2,20 @@ const express = require('express');
 const serverless = require('serverless-http');
 const cors = require('cors');
 const dotenv = require('dotenv');
+
+// Load environment variables immediately
+dotenv.config();
+
+// ***** CRITICAL FIX: INITIALIZE FIREBASE ADMIN *****
+// This ensures Firebase is initialized before any routes or middleware are called.
+// By requiring it here, we guarantee that the admin app is ready for auth checks
+// and database operations throughout the application lifecycle.
+require('../../backend/config/database');
+
 const productRoutes = require('../../backend/routes/productRoutes');
 const orderRoutes = require('../../backend/routes/orderRoutes');
 const cartRoutes = require('../../backend/routes/cartRoutes');
 const userRoutes = require('../../backend/routes/userRoutes');
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 
