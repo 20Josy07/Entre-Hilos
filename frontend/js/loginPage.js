@@ -5,7 +5,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 import { app as firebaseApp } from './firebase-config.js';
 
-const API_URL = '/.netlify/functions/api';
+// CORRECTED: Use the user-friendly API endpoint defined in netlify.toml
+const API_URL = '/api';
 
 document.addEventListener('DOMContentLoaded', () => {
     const auth = getAuth(firebaseApp);
@@ -72,16 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (!response.ok) {
-                    // **FIXED: ROBUST ERROR HANDLING**
-                    // Read the body as text ONCE to avoid the 'body stream already read' error.
                     const errorBody = await response.text();
-                    let errorMessage = errorBody; // Default to the raw text body
+                    let errorMessage = errorBody;
                     try {
-                        // Try to parse it as JSON to find a more specific error message.
                         const result = JSON.parse(errorBody);
                         errorMessage = result.detailed_error || result.error || JSON.stringify(result);
                     } catch (e) {
-                        // If parsing fails, it wasn't JSON. The raw text in errorMessage is correct.
                         console.log("Error response was not JSON, using raw text.");
                     }
                     throw new Error(errorMessage);
