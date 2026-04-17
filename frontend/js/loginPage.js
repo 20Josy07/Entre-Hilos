@@ -1,138 +1,145 @@
-import { auth } from './firebase-config.js';
-import { EntreHilosUI } from './app.js';
-import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+import { firebaseApp } from './firebase-config.js';
+
+const API_URL = '/.netlify/functions/api';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Tabs
+    const auth = getAuth(firebaseApp);
+
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
 
-    // Forms Inputs
-    const loginEmail = document.getElementById('login-email');
-    const loginPass = document.getElementById('login-password');
-    const regFirstName = document.getElementById('reg-first-name');
-    const regLastName = document.getElementById('reg-last-name');
-    const regPhone = document.getElementById('reg-phone');
-    const regEmail = document.getElementById('reg-email');
-    const regPass = document.getElementById('reg-password');
+    const loginError = document.getElementById('login-error');
+    const loginErrorContainer = document.getElementById('login-error-container');
+    const regError = document.getElementById('reg-error');
+    const regErrorContainer = document.getElementById('reg-error-container');
 
-    // Misc
-    const btnGuestLogin = document.getElementById('btn-guest-login');
-    const loginErrorCont = document.getElementById('login-error-container');
-    const loginErrorText = document.getElementById('login-error');
-    const regErrorCont = document.getElementById('reg-error-container');
-    const regErrorText = document.getElementById('reg-error');
-
-    let isProcessing = false;
-
-    // Auth state check - Redirect if logged in (avoid during registration/guest login)
-    onAuthStateChanged(auth, (user) => {
-        if (user && !isProcessing) {
-            window.location.href = "/catalogo.html";
-        }
-    });
-
-    // Tab Switching Logic
-    tabLogin.addEventListener('click', () => {
+    // --- Tab Switching Logic ---
+    tabLogin.addEventListener('click', (e) => {
+        e.preventDefault();
         loginForm.classList.remove('hidden');
         registerForm.classList.add('hidden');
         tabLogin.classList.add('border-tierra-600', 'text-tierra-900');
-        tabLogin.classList.remove('text-tierra-500');
+        tabLogin.classList.remove('font-medium', 'text-tierra-500', 'border-transparent');
+        tabRegister.classList.add('font-medium', 'text-tierra-500', 'border-transparent');
         tabRegister.classList.remove('border-tierra-600', 'text-tierra-900');
-        tabRegister.classList.add('border-transparent', 'text-tierra-500');
     });
 
-    tabRegister.addEventListener('click', () => {
+    tabRegister.addEventListener('click', (e) => {
+        e.preventDefault();
         registerForm.classList.remove('hidden');
         loginForm.classList.add('hidden');
         tabRegister.classList.add('border-tierra-600', 'text-tierra-900');
-        tabRegister.classList.remove('text-tierra-500');
+        tabRegister.classList.remove('font-medium', 'text-tierra-500', 'border-transparent');
+        tabLogin.classList.add('font-medium', 'text-tierra-500', 'border-transparent');
         tabLogin.classList.remove('border-tierra-600', 'text-tierra-900');
-        tabLogin.classList.add('border-transparent', 'text-tierra-500');
     });
 
-    // Login Submission
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = loginForm.querySelector('button');
-        btn.disabled = true;
-        btn.textContent = 'Ingresando...';
-        loginErrorCont.classList.add('hidden');
-
-        isProcessing = true;
-        try {
-            await signInWithEmailAndPassword(auth, loginEmail.value, loginPass.value);
-            window.location.href = "/catalogo.html";
-        } catch (error) {
-            console.error(error);
-            loginErrorText.textContent = "Error al ingresar: " + (error.code === 'auth/invalid-credential' ? "Correo o contraseña incorrectos" : error.message);
-            loginErrorCont.classList.remove('hidden');
-            btn.disabled = false;
-            btn.textContent = 'Entrar';
+    // --- Firebase Auth State Observer ---
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            console.log("User is logged in, redirecting...");
+            window.location.href = '/index.html'; 
         }
     });
 
-    // Register Submission
+    // --- Registration Logic ---
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = registerForm.querySelector('button');
-        btn.disabled = true;
-        btn.textContent = 'Creando Cuenta...';
-        regErrorCont.classList.add('hidden');
+        regErrorContainer.classList.add('hidden');
+        
+        const firstName = document.getElementById('reg-first-name').value;
+        const lastName = document.getElementById('reg-last-name').value;
+        const phone = document.getElementById('reg-phone').value;
+        const email = document.getElementById('reg-email').value;
+        const password = document.getElementById('reg-password').value;
 
-        isProcessing = true;
         try {
-            // 1. Create User
-            const userCredential = await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
+            // 1. Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // 2. Save Profile Data to Firestore via Backend Bridge (bypassing Client Security Rules)
-            const idToken = await user.getIdToken();
-            const profileResponse = await fetch('/api/users', {
+            // 2. Get the ID token
+            const token = await user.getIdToken();
+
+            // 3. Send data to your backend to create a profile in Firestore
+            const response = await fetch(`${API_URL}/users`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    first_name: regFirstName.value.trim(),
-                    last_name: regLastName.value.trim(),
-                    phone: regPhone.value.trim(),
-                    email: regEmail.value.trim()
+                body: JSON.stringify({ 
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone: phone,
+                    email: email
                 })
             });
 
-            if (!profileResponse.ok) {
-                throw new Error("No se pudo crear el perfil en la base de datos.");
-            }
+            const result = await response.json();
 
-            // 3. Manual Redirect after API success
-            window.location.href = "/catalogo.html";
+            if (!response.ok) {
+                // **CRITICAL CHANGE HERE**
+                // Display the detailed error from the backend if available
+                const errorMessage = result.detailed_error || result.error || 'Ocurrió un error desconocido en el servidor.';
+                throw new Error(errorMessage);
+            }
+            
+            // If everything is OK, redirect (the onAuthStateChanged will handle it)
+            console.log("Profile created successfully on backend!");
+
         } catch (error) {
-            isProcessing = false;
-            console.error(error);
-            regErrorText.textContent = "Error al registrar: " + error.message;
-            regErrorCont.classList.remove('hidden');
-            btn.disabled = false;
-            btn.textContent = 'Crear Cuenta';
+            console.error("Registration Error:", error);
+            let displayMessage = 'Ocurrió un error durante el registro.';
+            
+            // Use the specific error message from the backend or Firebase Auth
+            displayMessage = error.message; 
+
+            regError.textContent = displayMessage;
+            regErrorContainer.classList.remove('hidden');
         }
     });
 
-    // Guest Login
-    btnGuestLogin.addEventListener('click', async () => {
-        isProcessing = true;
+    // --- Login Logic ---
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginErrorContainer.classList.add('hidden');
+        
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
         try {
-            btnGuestLogin.disabled = true;
-            btnGuestLogin.textContent = 'Conectando Seguro...';
-            await signInAnonymously(auth);
-            window.location.href = "/catalogo.html";
+            await signInWithEmailAndPassword(auth, email, password);
+            // Redirect is handled by onAuthStateChanged
         } catch (error) {
-            isProcessing = false;
-            EntreHilosUI.alert("No se pudo iniciar sesión como invitado: " + error.message, 'error');
-            btnGuestLogin.disabled = false;
-            btnGuestLogin.textContent = 'Continuar comprando como Invitado';
+            console.error("Login Error:", error);
+            let displayMessage = 'Ocurrió un error al iniciar sesión.';
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                displayMessage = 'Correo o contraseña incorrectos.';
+            } else if (error.code === 'auth/invalid-email') {
+                displayMessage = 'El formato del correo electrónico no es válido.';
+            } else {
+                displayMessage = 'Error: ' + error.message;
+            }
+            loginError.textContent = displayMessage;
+            loginErrorContainer.classList.remove('hidden');
         }
+    });
+
+    // --- Guest Login Logic ---
+    document.getElementById('btn-guest-login').addEventListener('click', () => {
+        // Just go back to the catalog or main page
+        window.location.href = '/catalogo.html';
     });
 });
