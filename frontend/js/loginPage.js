@@ -2,10 +2,6 @@ import {
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    onAuthStateChanged,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signOut
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 import { firebaseApp } from './firebase-config.js';
 
@@ -45,14 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tabLogin.classList.remove('border-tierra-600', 'text-tierra-900');
     });
 
-    // --- Firebase Auth State Observer ---
-    onAuthStateChanged(auth, user => {
-        if (user) {
-            console.log("User is logged in, redirecting...");
-            window.location.href = '/index.html'; 
-        }
-    });
-
     // --- Registration Logic ---
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -65,14 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('reg-password').value;
 
         try {
-            // 1. Create user in Firebase Auth
+            // Step 1: Create user in Firebase Auth
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // 2. Get the ID token
+            // Step 2: Get the ID token to authenticate with our backend
             const token = await user.getIdToken();
 
-            // 3. Send data to your backend to create a profile in Firestore
+            // Step 3: Send data to our backend to create the Firestore profile
             const response = await fetch(`${API_URL}/users`, {
                 method: 'POST',
                 headers: {
@@ -90,23 +78,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (!response.ok) {
-                // **CRITICAL CHANGE HERE**
-                // Display the detailed error from the backend if available
+                // If backend fails, show the detailed error
                 const errorMessage = result.detailed_error || result.error || 'Ocurrió un error desconocido en el servidor.';
                 throw new Error(errorMessage);
             }
             
-            // If everything is OK, redirect (the onAuthStateChanged will handle it)
-            console.log("Profile created successfully on backend!");
+            // Step 4: Only redirect AFTER the backend profile is created successfully
+            console.log("User and profile created successfully! Redirecting...");
+            window.location.href = '/index.html';
 
         } catch (error) {
-            console.error("Registration Error:", error);
-            let displayMessage = 'Ocurrió un error durante el registro.';
-            
-            // Use the specific error message from the backend or Firebase Auth
-            displayMessage = error.message; 
-
-            regError.textContent = displayMessage;
+            console.error("Registration process failed:", error);
+            regError.textContent = error.message; // Display the specific error message
             regErrorContainer.classList.remove('hidden');
         }
     });
@@ -121,16 +104,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            // Redirect is handled by onAuthStateChanged
+            // Redirect after successful login
+            window.location.href = '/index.html';
         } catch (error) {
             console.error("Login Error:", error);
             let displayMessage = 'Ocurrió un error al iniciar sesión.';
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                 displayMessage = 'Correo o contraseña incorrectos.';
             } else if (error.code === 'auth/invalid-email') {
                 displayMessage = 'El formato del correo electrónico no es válido.';
             } else {
-                displayMessage = 'Error: ' + error.message;
+                displayMessage = error.message; // Show other auth errors
             }
             loginError.textContent = displayMessage;
             loginErrorContainer.classList.remove('hidden');
@@ -139,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Guest Login Logic ---
     document.getElementById('btn-guest-login').addEventListener('click', () => {
-        // Just go back to the catalog or main page
         window.location.href = '/catalogo.html';
     });
 });
