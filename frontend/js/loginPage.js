@@ -3,22 +3,7 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-
-// NOTE: This firebaseConfig MUST be replaced by the user's actual Firebase configuration.
-// The placeholder values here will not work.
-const firebaseConfig = {
-    apiKey: "AIzaSyCl8uUOMIhkJk2Rpojt6AElQjjxvC0e1bw",
-    authDomain: "entre-hilos-c798a.firebaseapp.com",
-    projectId: "entre-hilos-c798a",
-    storageBucket: "entre-hilos-c798a.firebasestorage.app",
-    messagingSenderId: "833894892237",
-    appId: "1:833894892237:web:85020432069abf06201f84",
-    measurementId: "G-VXK5RFZFSZ"
-  };
-
-// Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig);
+import { app as firebaseApp } from './firebase-config.js';
 
 const API_URL = '/.netlify/functions/api';
 
@@ -56,8 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
             tabLogin.classList.add('font-medium', 'text-tierra-500', 'border-transparent');
             tabLogin.classList.remove('border-tierra-600', 'text-tierra-900');
         });
-    } else {
-        console.error('UI Error: One or more tab elements for login/register are missing.');
     }
 
     // --- Registration Logic ---
@@ -73,14 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('reg-password').value;
 
             try {
-                // Step 1: Create user in Firebase Auth
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
-
-                // Step 2: Get the ID token to authenticate with our backend
                 const token = await user.getIdToken();
 
-                // Step 3: Send data to our backend to create the Firestore profile
                 const response = await fetch(`${API_URL}/users`, {
                     method: 'POST',
                     headers: {
@@ -88,30 +67,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ 
-                        first_name: firstName,
-                        last_name: lastName,
-                        phone: phone,
-                        email: email
+                        first_name: firstName, last_name: lastName, phone: phone, email: email
                     })
                 });
 
                 if (!response.ok) {
-                    let errorMessage = 'Error desconocido del servidor.';
+                    // **FIXED: ROBUST ERROR HANDLING**
+                    // Read the body as text ONCE to avoid the 'body stream already read' error.
+                    const errorBody = await response.text();
+                    let errorMessage = errorBody; // Default to the raw text body
                     try {
-                        const result = await response.json();
+                        // Try to parse it as JSON to find a more specific error message.
+                        const result = JSON.parse(errorBody);
                         errorMessage = result.detailed_error || result.error || JSON.stringify(result);
                     } catch (e) {
-                        errorMessage = await response.text();
+                        // If parsing fails, it wasn't JSON. The raw text in errorMessage is correct.
+                        console.log("Error response was not JSON, using raw text.");
                     }
                     throw new Error(errorMessage);
                 }
                 
-                console.log("User and profile created successfully! Redirecting...");
                 window.location.href = '/index.html';
 
             } catch (error) {
                 console.error("Registration process failed:", error);
-                regError.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                regError.innerHTML = `<strong>Error:</strong><br>${error.message}`;
                 regErrorContainer.classList.remove('hidden');
             }
         });
@@ -140,14 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginError.textContent = displayMessage;
                 loginErrorContainer.classList.remove('hidden');
             }
-        });
-    }
-
-    // --- Guest Login Logic ---
-    const guestBtn = document.getElementById('btn-guest-login');
-    if (guestBtn) {
-        guestBtn.addEventListener('click', () => {
-            window.location.href = '/catalogo.html';
         });
     }
 });
