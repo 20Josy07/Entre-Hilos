@@ -6,13 +6,12 @@ const productRoutes = require('../../backend/routes/productRoutes');
 const orderRoutes = require('../../backend/routes/orderRoutes');
 const cartRoutes = require('../../backend/routes/cartRoutes');
 const userRoutes = require('../../backend/routes/userRoutes');
-const { connectDB } = require('../../backend/config/database');
 
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
+// NOTE: The Firebase connection is now handled automatically within the database config file.
+// No explicit connection call is needed here.
 
 const app = express();
 
@@ -20,7 +19,7 @@ const app = express();
 const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'https://entre-hilos-store.netlify.app', // Added the new frontend URL
+    'https://entre-hilos-store.netlify.app',
     process.env.ALLOWED_ORIGIN
 ].filter(Boolean);
 
@@ -29,7 +28,7 @@ app.use(cors({
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            callback(new Error(`CORS: origen no permitido: ${origin}`));
+            callback(new Error(`CORS: origin not permitted: ${origin}`));
         }
     },
     credentials: true
