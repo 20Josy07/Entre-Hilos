@@ -1,13 +1,13 @@
 import { auth } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
-// Global Registry
-// In local dev (localhost) the backend runs on the same server.
-// In production (Netlify), requests go to the Railway backend.
-const RAILWAY_URL = 'https://COLOCA-TU-URL-DE-RAILWAY-AQUI.up.railway.app';
-export const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? '/api'
-    : `${RAILWAY_URL}/api`;
+// --- CRITICAL FIX ---
+// The previous logic was flawed and attempted to use a non-existent Railway URL in production.
+// By setting the API_URL to '/api' universally, we ensure that all API calls are correctly
+// routed through Netlify's proxy, regardless of the environment (local or production).
+// This is the single source of truth for all API requests in the frontend.
+export const API_URL = '/api';
+
 export let currentUserToken = null;
 
 /**
@@ -71,10 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userProfile) userProfile.classList.remove('hidden');
             if (document.getElementById('my-orders-link')) document.getElementById('my-orders-link').classList.remove('hidden');
             
-            // Fetch Profile for Initials (pass user object for fallbacks)
             loadUserProfile(user);
-            
-            // Sync Server Cart 
             loadServerCartData();
         } else {
             currentUserToken = null;
@@ -87,70 +84,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadUserProfile(user) {
         if (!userAvatar || !user) return;
-        
         let initials = "";
-        
         try {
-            // 1. Try API Profile (Bypassing Client Security Rules)
             const idToken = await user.getIdToken();
-            const response = await fetch('/api/users/profile', {
+            const response = await fetch(`${API_URL}/users/profile`, {
                 headers: { 'Authorization': `Bearer ${idToken}` }
             });
-
             if (response.ok) {
                 const result = await response.json();
                 const data = result.data;
                 const first = data.first_name || '';
                 const last = data.last_name || '';
-                if (first) {
-                    initials = (first[0] + (last ? last[0] : '')).toUpperCase();
-                }
+                if (first) initials = (first[0] + (last ? last[0] : '')).toUpperCase();
             }
-            
-            // 2. Auth DisplayName Fallback (In case API is slow or profile incomplete)
             if (!initials && user.displayName) {
                 const parts = user.displayName.split(' ');
                 initials = (parts[0][0] + (parts.length > 1 ? parts[1][0] : '')).toUpperCase();
             }
-            
-            // 3. Last Resort: Email
-            if (!initials && user.email) {
-                initials = user.email[0].toUpperCase();
-            }
-            
-            // 4. Ultimate Fail: "U"
+            if (!initials && user.email) initials = user.email[0].toUpperCase();
             if (!initials) initials = "U";
-
             userAvatar.innerHTML = `<span class="tracking-tighter">${initials}</span>`;
-            
         } catch (err) {
             console.error("Error loading profile:", err);
-            // Default to Email if Firestore fails
-            if (user.email) {
-                userAvatar.innerHTML = `<span class="tracking-tighter">${user.email[0].toUpperCase()}</span>`;
-            }
+            if (user.email) userAvatar.innerHTML = `<span class="tracking-tighter">${user.email[0].toUpperCase()}</span>`;
         }
     }
 
-    // Dropdown Control
     if (profileBtn && userDropdown) {
         profileBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             userDropdown.classList.toggle('hidden');
         });
-        
-        // Close on click outside
-        document.addEventListener('click', () => {
-            userDropdown.classList.add('hidden');
-        });
+        document.addEventListener('click', () => userDropdown.classList.add('hidden'));
     }
 
-    // Logout via Dropdown
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            e.stopPropagation(); // Avoid closing dropdown before confirm
-            
+            e.stopPropagation();
             const result = await EntreHilosUI.confirm("¿Deseas cerrar tu sesión actual?", "Cerrar Sesión");
             if (result.isConfirmed) {
                 try {
@@ -158,13 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = "/index.html";
                 } catch (err) {
                     console.error("Logout error:", err);
-                    window.location.href = "/index.html"; 
+                    window.location.href = "/index.html";
                 }
             }
         });
     }
 
-    // Helper: Initial Cart count load
     async function loadServerCartData() {
         if (!currentUserToken || !cartCountEl) return;
         try {
@@ -172,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${currentUserToken}` }
             });
             const result = await res.json();
-            
             if (result.data && result.data.items) {
                 const totalItems = result.data.items.reduce((acc, current) => acc + current.quantity, 0);
                 if (totalItems > 0) {
@@ -189,15 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('cartUpdatedEvt', loadServerCartData);
 
-    // Cart Button Redirection
     const cartBtn = document.getElementById('cart-button');
     if (cartBtn) {
         cartBtn.addEventListener('click', () => {
-            if (!currentUserToken) {
-                window.location.href = "/login.html";
-            } else {
-                window.location.href = "/carrito.html";
-            }
+            if (!currentUserToken) window.location.href = "/login.html";
+            else window.location.href = "/carrito.html";
         });
     }
 });
