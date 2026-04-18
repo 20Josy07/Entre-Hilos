@@ -1,26 +1,31 @@
-const db = require('../config/database');
 const admin = require('firebase-admin');
+
+// NOTE: We no longer import 'db' from '../config/database'.
+// Instead, we will get a fresh instance of the Firestore database in each function
+// by calling admin.firestore(). This is a more robust pattern that avoids issues
+// with module load timing and ensures the db object is always available after initialization.
 
 const productController = {
     // Get all products
     getAllProducts: async (req, res) => {
         try {
-            if (!db) throw new Error("Base de datos no inicializada");
+            // Get a fresh DB instance. Throws an error if SDK not initialized.
+            const db = admin.firestore();
             
             const snapshot = await db.collection('products').get();
             const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
             res.json({ data: products });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error("Error in getAllProducts:", error);
+            res.status(500).json({ error: 'Failed to get products: ' + error.message });
         }
     },
 
     // Get a specific product by ID
     getProductById: async (req, res) => {
         try {
-            if (!db) throw new Error("Base de datos no inicializada");
-            
+            const db = admin.firestore();
             const productId = req.params.id;
             const doc = await db.collection('products').doc(productId).get();
             
@@ -30,15 +35,15 @@ const productController = {
             
             res.json({ data: { id: doc.id, ...doc.data() } });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error("Error in getProductById:", error);
+            res.status(500).json({ error: 'Failed to get product by ID: ' + error.message });
         }
     },
 
     // Create a new product
     createProduct: async (req, res) => {
         try {
-            if (!db) throw new Error("Base de datos no inicializada");
-
+            const db = admin.firestore();
             const { name, description, price, stock, image_url } = req.body;
             
             if (!name || price === undefined) {
@@ -61,15 +66,15 @@ const productController = {
                 data: { id: docRef.id, ...newProduct }
             });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error("Error in createProduct:", error);
+            res.status(500).json({ error: 'Failed to create product: ' + error.message });
         }
     },
 
     // Update an existing product
     updateProduct: async (req, res) => {
         try {
-            if (!db) throw new Error("Base de datos no inicializada");
-            
+            const db = admin.firestore();
             const productId = req.params.id;
             const { name, description, price, stock, image_url } = req.body;
             
@@ -88,15 +93,15 @@ const productController = {
             
             res.status(200).json({ message: 'Product updated successfully', data: { id: productId, ...updateData } });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error("Error in updateProduct:", error);
+            res.status(500).json({ error: 'Failed to update product: ' + error.message });
         }
     },
 
     // Delete an existing product
     deleteProduct: async (req, res) => {
         try {
-            if (!db) throw new Error("Base de datos no inicializada");
-            
+            const db = admin.firestore();
             const productId = req.params.id;
             if (!productId) {
                 return res.status(400).json({ error: 'Product ID is required' });
@@ -106,7 +111,8 @@ const productController = {
             
             res.status(200).json({ message: 'Product deleted successfully', data: { id: productId } });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error("Error in deleteProduct:", error);
+            res.status(500).json({ error: 'Failed to delete product: ' + error.message });
         }
     }
 };
