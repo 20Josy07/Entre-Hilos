@@ -22,9 +22,9 @@ const orderController = {
             const uid = req.user.uid;
             if (!db) throw new Error("Base de datos no inicializada");
             
-            // Fetch from user-specific history subcollection
-            const snapshot = await db.collection('users').doc(uid).collection('history')
-                .get();
+            const userRef = db.collection('users').doc(uid);
+            const historyRef = userRef.collection('history');
+            const snapshot = await historyRef.get();
                 
             const orders = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -56,7 +56,7 @@ const orderController = {
             }
 
             const cartData = cartDoc.data();
-            const orderId = db.collection('orders').doc().id; // Generate shared ID
+            const orderId = db.collection('orders').doc().id; 
 
             const { shipping_info } = req.body;
             console.log("Creando pedido con info de envío:", shipping_info);
@@ -71,11 +71,16 @@ const orderController = {
             };
 
             await db.runTransaction(async (transaction) => {
+                const userDocRef = db.collection('users').doc(uid);
+                
                 // 1. Write to Global Orders (for Admin)
                 transaction.set(db.collection('orders').doc(orderId), newOrder);
                 
-                // 2. Write to User History (for Client)
-                transaction.set(db.collection('users').doc(uid).collection('history').doc(orderId), newOrder);
+                // 2. CRITICAL FIX: Ensure user document exists before writing to subcollection.
+                // This prevents errors for new users placing their first order.
+                // We use set with merge:true to safely create or merge, then write to the history.
+                transaction.set(userDocRef, {}, { merge: true });
+                transaction.set(userDocRef.collection('history').doc(orderId), newOrder);
                 
                 // 3. Clear Cart
                 transaction.delete(cartRef);
@@ -83,7 +88,8 @@ const orderController = {
 
             res.status(201).json({ message: 'Pedido realizado con éxito', orderId });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error("Error creating order:", error);
+            res.status(500).json({ error: 'Hubo un problema al registrar tu pedido. ' + error.message });
         }
     },
 
@@ -108,7 +114,6 @@ const orderController = {
                 const uid = order.user_id;
                 const currentStatus = order.status;
 
-                // Sync status and timestamps
                 const updates = { 
                     status: status, 
                     updated_at: admin.firestore.FieldValue.serverTimestamp() 
@@ -133,12 +138,15 @@ const orderController = {
                 // 3. Update User History Copy (if UID exists)
                 if (uid) {
                     const userOrderRef = db.collection('users').doc(uid).collection('history').doc(id);
+                    // Also ensure user doc exists here for safety, though createOrder should handle it.
+                    transaction.set(db.collection('users').doc(uid), {}, { merge: true });
                     transaction.update(userOrderRef, updates);
                 }
             });
 
             res.json({ message: `Pedido actualizado a ${status} exitosamente` });
         } catch (error) {
+            console.error("Error updating status:", error);
             res.status(500).json({ error: error.message });
         }
     }
